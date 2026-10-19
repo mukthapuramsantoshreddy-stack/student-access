@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Student Management System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="container">
+    <header>
+      <p class="eyebrow">AWS hands-on project</p>
+      <h1>Student Management System</h1>
+      <p class="subtitle">Add student records and optionally upload a document or profile image to Amazon S3.</p>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="notice {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <section class="panel">
+      <h2>Add a student</h2>
+      <form action="{{ url_for('add_student') }}" method="post" enctype="multipart/form-data">
+        <div class="fields">
+          <label>Student name
+            <input type="text" name="name" required maxlength="120" placeholder="e.g. Ravi Kumar">
+          </label>
+          <label>Email
+            <input type="email" name="email" required maxlength="254" placeholder="student@example.com">
+          </label>
+          <label>Course
+            <input type="text" name="course" required maxlength="120" placeholder="e.g. Cloud Computing">
+          </label>
+          <label>Photo or document (optional)
+            <input type="file" name="image" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf">
+          </label>
+        </div>
+        <p class="hint">
+          {% if bucket_configured %}
+            S3 upload is configured. Files are stored privately under the <code>student-files/</code> prefix.
+          {% else %}
+            S3 upload is not configured yet. Set the <code>S3_BUCKET</code> environment variable.
+          {% endif %}
+        </p>
+        <button type="submit">Add student</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Student records</h2>
+      {% if students %}
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Course</th><th>S3 object key</th><th>Action</th></tr></thead>
+            <tbody>
+            {% for student in students %}
+              <tr>
+                <td>{{ student.id }}</td>
+                <td>{{ student.name }}</td>
+                <td>{{ student.email }}</td>
+                <td>{{ student.course }}</td>
+                <td>{% if student.image_key %}<code>{{ student.image_key }}</code>{% else %}<span class="muted">No file</span>{% endif %}</td>
+                <td>
+                  <form action="{{ url_for('delete_student', student_id=student.id) }}" method="post" onsubmit="return confirm('Delete this student record?')">
+                    <button class="danger" type="submit">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="muted">No student records yet. Add the first student above.</p>
+      {% endif %}
+    </section>
+    <footer>Demo project · <a href="{{ url_for('health') }}">Health check</a></footer>
+  </main>
+</body>
+</html>
